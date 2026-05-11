@@ -73,10 +73,10 @@ onActivate(engine) {
 
 onPostUpdate(engine) {
     if (levelComplete()) {
-        engine.goto("nextLevel") // Deactivate, then activate next
+        engine.goToScene("nextLevel") // Deactivate, then activate next
     }
     if (playerDied()) {
-        engine.goto("level1") // Restart, triggers onActivate again
+        engine.goToScene("level1") // Restart, triggers onActivate again
     }
 }
 ```
@@ -103,7 +103,7 @@ startGame() {
     this.addScene("levelComplete", new CompleteScene())
     this.addScene("gameOver", new GameOverScene())
     
-    this.goto("menu") // Start here
+    this.goToScene("menu") // Start here
 }
 ```
 
@@ -124,9 +124,9 @@ onPostUpdate(engine) {
     if (playerDead) {
         game.playerLives--
         if (game.playerLives <= 0) {
-            engine.goto("gameOver")
+            engine.goToScene("gameOver")
         } else {
-            engine.goto("level1") // Retry
+            engine.goToScene("level1") // Retry
         }
     }
 }
@@ -138,7 +138,7 @@ onPostUpdate(engine) {
 // Levels load sequentially
 onPostUpdate(engine) {
     if (allEnemiesDefeated()) {
-        engine.goto("boss") // Move to boss level
+        engine.goToScene("boss") // Move to boss level
     }
 }
 ```

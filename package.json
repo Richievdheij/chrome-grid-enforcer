@@ -1,14 +1,15 @@
 {
-  "name": "startproject",
+  "name": "chrome-grid-enforcer",
   "version": "0.0.1",
-  "author":"CMGT",
+  "author": "CMGT",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build --outDir=docs --base=./"
   },
   "devDependencies": {
-    "vite": "^8.0.1"
+    "sass-embedded": "^1.99.0",
+    "vite": "^8.0.12"
   },
   "dependencies": {
     "excalibur": "^0.32.0"

@@ -36,7 +36,7 @@ export class SceneLevelTwo extends Scene {
 
         // Example: Auto-advance to next level if player reaches right side
         // if (this.player.pos.x > 1200) {
-        //     engine.goto("level1")
+        //     engine.goToScene("level1")
         // }
     }
 }
