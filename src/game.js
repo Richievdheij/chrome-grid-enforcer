@@ -9,6 +9,7 @@ export class Game extends Engine {
 
     constructor() {
         super({ 
+            canvasElementId: 'game',
             width: 1280,
             height: 720,
             maxFps: 60,

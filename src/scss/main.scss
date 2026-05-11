@@ -3,3 +3,6 @@
 
 // 2. Import base styles (reset, typography, global styles)
 @use "base";
+
+// 3. Import components (buttons, cards, modals)
+@use "components/ui";

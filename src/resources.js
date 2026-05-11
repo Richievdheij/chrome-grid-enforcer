@@ -4,12 +4,10 @@ const Resources = {
     Fish: new ImageSource('images/fish.png'),
     Shark: new ImageSource('images/shark.png'),
     Cartridge: new ImageSource('images/cartridge.png'),
-    MainMenu: new ImageSource('images/main-menu.png'),
+    MainMenu: new ImageSource('images/menu-background.png'),
+    Logo: new ImageSource('images/logo.png')
 }
 
-const ResourceLoader = new Loader()
-for (let res of Object.values(Resources)) {
-    ResourceLoader.addResource(res)
-}
+const ResourceLoader = new Loader(Object.values(Resources))
 
 export { Resources, ResourceLoader }

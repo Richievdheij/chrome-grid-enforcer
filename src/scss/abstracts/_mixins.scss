@@ -6,3 +6,8 @@
   max-height: 100vh;
   object-fit: contain;
 }
+
+@mixin neon-glow($color) {
+    box-shadow: 0 0 15px $color, inset 0 0 10px $color;
+    text-shadow: 0 0 5px $color;
+}
