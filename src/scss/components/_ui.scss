@@ -88,6 +88,10 @@
 .btn-leaderboard {
     @extend .ui-element;
     @extend .btn-start;
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
     margin-top: 0;
     font-size: 16px;
     padding: 12px;

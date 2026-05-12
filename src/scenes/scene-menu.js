@@ -1,12 +1,14 @@
-import { Scene, Vector, Actor, Keys } from "excalibur"
+import { Scene, Vector, Actor, Keys, Timer } from "excalibur"
 import { Resources } from '../resources.js'
 import { ArcadeButton } from '../ui/button.js'
+import { SceneTransition } from '../ui/scene-transition.js'
 
 export class SceneMenu extends Scene {
     #startButton
     #leaderboardButton
     #nameInput
     #playerName = ""
+    #logo
 
     onInitialize(engine) {
         // background sprite scaled to fill viewport
@@ -25,54 +27,60 @@ export class SceneMenu extends Scene {
         bg.z = -10
         this.add(bg)
 
-        // Add logo actor
-        const logo = new Actor({
+        // logo stored as private field so we can animate it later
+        this.#logo = new Actor({
             pos: new Vector(engine.drawWidth / 2, 220)
         })
-        logo.graphics.use(Resources.Logo.toSprite())
-        logo.scale = new Vector(0.4, 0.4) // smaller logo size for title
-        this.add(logo)
+        this.#logo.graphics.use(Resources.Logo.toSprite())
+        this.#logo.scale = new Vector(0.4, 0.4)
+        this.add(this.#logo)
     }
 
-    onActivate(engine) {
+    onActivate() {
         document.body.style.cursor = "default"
         const ui = document.getElementById('ui-layer')
 
-        // 1. Create Name Input
+        // name input
         this.#nameInput = document.createElement('input')
         this.#nameInput.type = 'text'
         this.#nameInput.placeholder = 'IDENTIFY YOURSELF'
         this.#nameInput.className = 'input-name ui-element'
         this.#nameInput.maxLength = 12
         ui.appendChild(this.#nameInput)
-        
+
         this.#nameInput.addEventListener('input', () => {
             this.#nameInput.style.borderColor = ''
             this.#nameInput.placeholder = 'IDENTIFY YOURSELF'
         })
-        
-        // Auto-focus the input for the arcade feel
-        setTimeout(() => this.#nameInput.focus(), 100)
 
-        // 2. Create Play Button (Solid Background)
+        // auto-focus
+        const focusTimer = new Timer({
+            interval: 100,
+            fcn: () => this.#nameInput.focus()
+        })
+        this.add(focusTimer)
+        focusTimer.start()
+
+        // play button
         this.#startButton = new ArcadeButton('START ENFORCEMENT', () => {
-            this.#validateAndStart(engine)
+            this.#validateAndStart()
         })
         this.#startButton.mount('ui-layer')
         this.#startButton.element.classList.add('btn-play')
 
-        // 3. Create Leaderboard Button (Below Play)
+        // leaderboard button
         this.#leaderboardButton = new ArcadeButton('LEADERBOARD', () => {
-            engine.goToScene('leaderboard')
+            this.engine.goToScene('leaderboard')
         })
         this.#leaderboardButton.mount('ui-layer')
         this.#leaderboardButton.element.classList.add('btn-leaderboard')
     }
 
-    #validateAndStart(engine) {
+    #validateAndStart() {
+        if (this.#nameInput.disabled) return
+
         this.#playerName = this.#nameInput.value.trim()
 
-        // Simple validation: check if name is empty or too short
         if (this.#playerName.length < 2) {
             this.#nameInput.style.borderColor = "#ff0000"
             this.#nameInput.placeholder = "NAME TOO SHORT!"
@@ -81,23 +89,52 @@ export class SceneMenu extends Scene {
             return
         }
 
-        console.log(`Enforcer identified: ${this.#playerName}`)
-        
-        // Save to localStorage so other scenes can access it
+        this.#nameInput.disabled = true
         localStorage.setItem("currentPlayer", this.#playerName)
-        
-        engine.goToScene('game')
+
+        this.#startTransition()
+    }
+
+    #startTransition() {
+        const uiLayer = document.getElementById('ui-layer')
+
+        // fade out UI layer
+        if (uiLayer) {
+            uiLayer.style.transition = 'opacity 600ms ease-out'
+            uiLayer.style.opacity = '0'
+        }
+
+        // fade out logo
+        if (this.#logo) {
+            this.#logo.graphics.opacity = 0
+        }
+
+        // after fade, iris close then switch scene
+        const fadeTimer = new Timer({
+            interval: 700,
+            fcn: () => {
+                SceneTransition.irisClose(this, () => {
+                    this.engine.goToScene('game')
+                })
+            }
+        })
+        this.add(fadeTimer)
+        fadeTimer.start()
     }
 
     onPreUpdate(engine) {
-        // Arcade support via keyboard input
         if (engine.input.keyboard.wasPressed(Keys.Enter)) {
-            this.#validateAndStart(engine)
+            this.#validateAndStart()
         }
     }
 
-    onDeactivate(engine) {
-        // Clean up UI elements to prevent duplicates
+    onDeactivate() {
+        const uiLayer = document.getElementById('ui-layer')
+        if (uiLayer) {
+            uiLayer.style.transition = ''
+            uiLayer.style.opacity = '1'
+        }
+
         if (this.#nameInput) this.#nameInput.remove()
         if (this.#startButton) this.#startButton.unmount()
         if (this.#leaderboardButton) this.#leaderboardButton.unmount()

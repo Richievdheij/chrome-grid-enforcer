@@ -1,5 +1,5 @@
 import './scss/main.scss'
-import { Engine, DisplayMode, Color } from "excalibur"
+import { Engine, DisplayMode, Color, SolverStrategy, Vector } from "excalibur"
 import { ResourceLoader } from './resources.js'
 import { SceneMenu } from './scenes/scene-menu.js'
 import { SceneGame } from './scenes/scene-game.js'
@@ -8,15 +8,19 @@ import { SceneLeaderboard } from './scenes/scene-leaderboard.js'
 export class Game extends Engine {
 
     constructor() {
-        super({ 
+        super({
             canvasElementId: 'game',
             width: 1280,
             height: 720,
             maxFps: 60,
             displayMode: DisplayMode.FitScreen,
             backgroundColor: Color.Black,
-            suppressPlayButton: true
-         })
+            suppressPlayButton: true,
+            physics: {
+                solver: SolverStrategy.Arcade,
+                gravity: new Vector(0, 0)
+            }
+        })
 
         ResourceLoader.backgroundColor = "#000000"
         ResourceLoader.suppressPlayButton = true
