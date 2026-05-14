@@ -38,6 +38,12 @@ export class SceneMenu extends Scene {
 
     onActivate() {
         document.body.style.cursor = "default"
+
+        // restore logo visibility when returning to menu
+        if (this.#logo) {
+            this.#logo.graphics.opacity = 1
+        }
+
         const ui = document.getElementById('ui-layer')
 
         // name input

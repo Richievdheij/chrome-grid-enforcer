@@ -1,10 +1,11 @@
-import { Actor, Vector, Keys, CollisionType } from "excalibur"
+import { Actor, Vector, Keys, CollisionType, Color } from "excalibur"
 import { Resources } from '../resources.js'
 import { Bullet } from "./bullet.js"
 import { Drone } from "./drone.js"
 import { EnemyLaser } from "./enemy-laser.js"
 import { HealthPack } from "./healthpack.js"
 import { EmpBomb } from "./emp-bomb.js"
+import { Explosion } from "./explosion.js"
 
 export class Player extends Actor {
 
@@ -36,7 +37,9 @@ export class Player extends Actor {
     }
 
     onInitialize(engine) {
-        this.graphics.use(Resources.Player.toSprite())
+        const sprite = Resources.Player.toSprite()
+        sprite.flipHorizontal = true
+        this.graphics.use(sprite)
         this.scale = new Vector(0.5, 0.5)
 
         this.on("collisionstart", (event) => this.hitSomething(event))
@@ -73,8 +76,8 @@ export class Player extends Actor {
             }
         }
 
-        // shoot with spacebar
-        if (engine.input.keyboard.wasPressed(Keys.Space) && this.#canShoot) {
+        // auto-fire while spacebar held
+        if (engine.input.keyboard.isHeld(Keys.Space) && this.#canShoot) {
             this.shoot(engine)
         }
 
@@ -87,19 +90,27 @@ export class Player extends Actor {
         if (this.pos.y < halfH) this.pos.y = halfH
         if (this.pos.y > engine.drawHeight - halfH) this.pos.y = engine.drawHeight - halfH
 
-        // invincibility blink
+        // invincibility blink — flash red to show damage
         if (this.#invincible) {
             this.#invincibleTimer += delta
             this.#blinkTimer += delta
 
             if (this.#blinkTimer >= this.#blinkInterval) {
                 this.#blinkTimer = 0
-                this.graphics.opacity = this.graphics.opacity === 1 ? 0.2 : 1
+                // alternate between normal and red tint
+                if (this.graphics.opacity === 1) {
+                    this.graphics.opacity = 0.3
+                    this.color = Color.fromHex("#ff0000")
+                } else {
+                    this.graphics.opacity = 1
+                    this.color = Color.White
+                }
             }
 
             if (this.#invincibleTimer >= this.#invincibleDuration) {
                 this.#invincible = false
                 this.graphics.opacity = 1
+                this.color = Color.White
             }
         }
     }
@@ -168,13 +179,14 @@ export class Player extends Actor {
 
         if (other instanceof EmpBomb) {
             other.kill()
-            this.scene.engine.emit("empactivated")
+            this.scene.engine.emit("empactivated", { x: other.pos.x, y: other.pos.y })
         }
     }
 
     #die() {
         this.#gameOver = true
         this.vel = Vector.Zero
+        Explosion.show(this.scene, this.pos.x, this.pos.y)
         this.scene.engine.emit("gameover")
         this.kill()
     }
