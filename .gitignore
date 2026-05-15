@@ -51,3 +51,6 @@ Thumbs.db
 .cache/
 .temp/
 .tmp/
+
+
+downloaded-assets/

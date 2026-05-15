@@ -1,9 +1,12 @@
 export class SceneTransition {
 
     static #overlayDiv = null
+    static #safetyTimeoutId = null
 
-    // creates the full-screen black overlay div
     static #createOverlay() {
+        // always clean up any existing overlay first
+        SceneTransition.cleanup()
+
         const div = document.createElement('div')
         div.id = 'iris-overlay'
         div.style.cssText = `
@@ -16,61 +19,67 @@ export class SceneTransition {
             z-index: 50;
             pointer-events: none;
         `
-        document.getElementById('game-container').appendChild(div)
+        const container = document.getElementById('game-container')
+        if (container) {
+            container.appendChild(div)
+        }
         SceneTransition.#overlayDiv = div
         return div
     }
 
-    // iris closes: black circle grows from center to cover the screen
     static irisClose(scene, callback) {
-        // remove any existing overlay first
-        SceneTransition.#cleanup()
+        // make sure we start clean
+        SceneTransition.cleanup()
 
         const div = SceneTransition.#createOverlay()
 
-        // use Web Animations API — more reliable than CSS transitions
         const animation = div.animate([
             { clipPath: 'circle(0% at 50% 50%)' },
             { clipPath: 'circle(150% at 50% 50%)' }
         ], {
-            duration: 800,
-            easing: 'ease-in-out',
+            duration: 600,
+            easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
             fill: 'forwards'
         })
 
+        SceneTransition.#safetyTimeoutId = setTimeout(() => {
+            SceneTransition.cleanup()
+            if (callback) callback()
+        }, 1500)
+
         animation.onfinish = () => {
+            if (SceneTransition.#safetyTimeoutId) {
+                clearTimeout(SceneTransition.#safetyTimeoutId)
+                SceneTransition.#safetyTimeoutId = null
+            }
             if (callback) callback()
         }
     }
 
-    // iris opens: black circle shrinks to reveal the scene
     static irisOpen(scene, callback) {
-        // if no overlay exists, just run the callback
-        if (!SceneTransition.#overlayDiv) {
-            const div = SceneTransition.#createOverlay()
-            // start fully black
-            div.style.clipPath = 'circle(150% at 50% 50%)'
-        }
-
-        const div = SceneTransition.#overlayDiv
+        const div = SceneTransition.#overlayDiv || SceneTransition.#createOverlay()
+        div.style.clipPath = 'circle(150% at 50% 50%)'
 
         const animation = div.animate([
             { clipPath: 'circle(150% at 50% 50%)' },
             { clipPath: 'circle(0% at 50% 50%)' }
         ], {
-            duration: 800,
-            easing: 'ease-in-out',
+            duration: 600,
+            easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
             fill: 'forwards'
         })
 
         animation.onfinish = () => {
-            SceneTransition.#cleanup()
+            SceneTransition.cleanup()
             if (callback) callback()
         }
     }
 
-    // remove the overlay div completely
-    static #cleanup() {
+    static cleanup() {
+        if (SceneTransition.#safetyTimeoutId) {
+            clearTimeout(SceneTransition.#safetyTimeoutId)
+            SceneTransition.#safetyTimeoutId = null
+        }
         if (SceneTransition.#overlayDiv) {
             SceneTransition.#overlayDiv.remove()
             SceneTransition.#overlayDiv = null

@@ -15,7 +15,7 @@ export class HealthPack extends Actor {
 
     onInitialize(engine) {
         this.graphics.use(Resources.HealthPack.toSprite())
-        this.scale = new Vector(0.3, 0.3)
+        this.scale = new Vector(0.7, 0.7)
 
         // move left slowly
         this.vel = new Vector(-120, 0)
