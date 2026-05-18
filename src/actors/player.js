@@ -1,11 +1,10 @@
-import { Actor, Vector, Keys, CollisionType, Color } from "excalibur"
+import { Actor, Vector, Keys, CollisionType, Color, Animation, AnimationStrategy, Timer } from "excalibur"
 import { Resources } from '../resources.js'
 import { Bullet } from "./bullet.js"
 import { Drone } from "./drone.js"
 import { EnemyLaser } from "./enemy-laser.js"
 import { HealthPack } from "./healthpack.js"
 import { EmpBomb } from "./emp-bomb.js"
-import { Explosion } from "./explosion.js"
 
 export class Player extends Actor {
 
@@ -118,6 +117,8 @@ export class Player extends Actor {
     /** Fires a Bullet to the right, respects shoot cooldown. */
     shoot(engine) {
         this.#canShoot = false
+        Resources.BulletShot.volume = 0.08
+        Resources.BulletShot.play()
         const bullet = new Bullet(this.pos.x + 30, this.pos.y)
         engine.add(bullet)
     }
@@ -140,6 +141,9 @@ export class Player extends Actor {
             this.#die()
             return true
         }
+
+        Resources.PlayerHit.volume = 0.5
+        Resources.PlayerHit.play()
         return false
     }
 
@@ -174,11 +178,15 @@ export class Player extends Actor {
 
         if (other instanceof HealthPack) {
             other.kill()
+            Resources.HealthPickup.volume = 0.65
+            Resources.HealthPickup.play()
             this.heal()
         }
 
         if (other instanceof EmpBomb) {
             other.kill()
+            Resources.EmpPickup.volume = 0.65
+            Resources.EmpPickup.play()
             this.scene.engine.emit("empactivated", { x: other.pos.x, y: other.pos.y })
         }
     }
@@ -186,8 +194,22 @@ export class Player extends Actor {
     #die() {
         this.#gameOver = true
         this.vel = Vector.Zero
-        Explosion.show(this.scene, this.pos.x, this.pos.y)
+        this.#playDeathAnimation()
+        Resources.ExplosionSound.volume = 0.6
+        Resources.ExplosionSound.play()
         this.scene.engine.emit("gameover")
-        this.kill()
+        const killTimer = new Timer({ interval: 480, fcn: () => this.kill() })
+        this.scene.add(killTimer)
+        killTimer.start()
+    }
+
+    #playDeathAnimation() {
+        const frames = [
+            Resources.Explosion1, Resources.Explosion2, Resources.Explosion3,
+            Resources.Explosion4, Resources.Explosion5, Resources.Explosion6
+        ].map(img => ({ graphic: img.toSprite(), duration: 80 }))
+        const anim = new Animation({ frames, strategy: AnimationStrategy.End })
+        this.graphics.use(anim)
+        this.scale = new Vector(1.5, 1.5)
     }
 }

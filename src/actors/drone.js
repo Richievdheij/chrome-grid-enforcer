@@ -111,6 +111,8 @@ export class Drone extends Actor {
 
             if (this.#health <= 0) {
                 this.scene.engine.emit("scorepoints", this.#pointValue)
+                Resources.ExplosionSound.volume = 0.15
+                Resources.ExplosionSound.play()
                 Explosion.show(this.scene, this.pos.x, this.pos.y)
                 this.kill()
             }

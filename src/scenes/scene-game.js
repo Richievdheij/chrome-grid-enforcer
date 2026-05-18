@@ -1,4 +1,5 @@
 import { Scene, Timer, Vector, Keys, Actor, Rectangle, Color } from "excalibur"
+import { Resources } from '../resources.js'
 import { SceneTransition } from '../ui/scene-transition.js'
 import { DifficultyManager } from '../ui/difficulty-manager.js'
 import { HudScore } from '../ui/hud-score.js'
@@ -139,6 +140,10 @@ export class SceneGame extends Scene {
         this.#gameActive = true
         this.#scoreTimer.start()
 
+        Resources.GameMusic.volume = 0.2
+        Resources.GameMusic.loop = true
+        Resources.GameMusic.play()
+
         SceneTransition.irisOpen(this)
     }
 
@@ -203,6 +208,7 @@ export class SceneGame extends Scene {
     }
 
     onDeactivate() {
+        Resources.GameMusic.stop()
         this.#scoreTimer.stop()
         SceneTransition.cleanup()
 
@@ -302,12 +308,31 @@ export class SceneGame extends Scene {
         this.#updateGame()
     }
 
+    #startMusicFadeOut() {
+        let steps = 0
+        const fadeTimer = new Timer({
+            interval: 60,
+            repeats: true,
+            fcn: () => {
+                steps++
+                Resources.GameMusic.volume = Math.max(0, 0.4 - steps * 0.02)
+                if (steps >= 20) {
+                    fadeTimer.stop()
+                    Resources.GameMusic.stop()
+                }
+            }
+        })
+        this.add(fadeTimer)
+        fadeTimer.start()
+    }
+
     /** Player died — show game over screen, then leaderboard on enter. */
     gameOver() {
         if (!this.#gameActive) return
 
         this.#gameActive = false
         this.#scoreTimer.stop()
+        this.#startMusicFadeOut()
 
         // save score
         const name = localStorage.getItem("currentPlayer") || "UNKNOWN"

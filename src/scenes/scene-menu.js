@@ -39,6 +39,10 @@ export class SceneMenu extends Scene {
     onActivate() {
         document.body.style.cursor = "default"
 
+        Resources.MenuMusic.volume = 0.3
+        Resources.MenuMusic.loop = true
+        Resources.MenuMusic.play()
+
         // restore logo visibility when returning to menu
         if (this.#logo) {
             this.#logo.graphics.opacity = 1
@@ -135,6 +139,8 @@ export class SceneMenu extends Scene {
     }
 
     onDeactivate() {
+        Resources.MenuMusic.stop()
+
         const uiLayer = document.getElementById('ui-layer')
         if (uiLayer) {
             uiLayer.style.transition = ''

@@ -16,6 +16,8 @@ export class EnemyLaser extends Actor {
     }
 
     onInitialize(engine) {
+        Resources.EnemyShot.volume = 0.07
+        Resources.EnemyShot.play()
         this.graphics.use(Resources.EnemyLaser.toSprite())
         // always large and clearly visible
         this.scale = new Vector(0.8, 0.8)
