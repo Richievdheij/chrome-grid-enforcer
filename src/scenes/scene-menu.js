@@ -3,6 +3,18 @@ import { Resources } from '../resources.js'
 import { ArcadeButton } from '../ui/button.js'
 import { SceneTransition } from '../ui/scene-transition.js'
 
+/**
+ * SceneMenu — main menu scene.
+ * Shows the logo, a name input field and Start/Leaderboard buttons.
+ * Inherits from Excalibur's Scene class via `extends`.
+ *
+ * @extends Scene
+ * @property {ArcadeButton}    #startButton       - "Start" button Object (private)
+ * @property {ArcadeButton}    #leaderboardButton - "Leaderboard" button Object (private)
+ * @property {HTMLInputElement} #nameInput        - DOM input where the player enters their name (private)
+ * @property {string}          #playerName        - last validated player name (private)
+ * @property {Actor}           #logo              - Actor that shows the title logo (private)
+ */
 export class SceneMenu extends Scene {
     #startButton
     #leaderboardButton
@@ -10,6 +22,12 @@ export class SceneMenu extends Scene {
     #playerName = ""
     #logo
 
+    /**
+     * Lifecycle method — runs once when the Scene is created.
+     * Adds the static background and logo actors.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     onInitialize(engine) {
         // background sprite scaled to fill viewport
         const bgSprite = Resources.MainMenu.toSprite()
@@ -36,6 +54,11 @@ export class SceneMenu extends Scene {
         this.add(this.#logo)
     }
 
+    /**
+     * Lifecycle method — runs every time the menu becomes active.
+     * Sets up music, the DOM name input and the two buttons.
+     * @returns {void}
+     */
     onActivate() {
         document.body.style.cursor = "default"
 
@@ -63,7 +86,7 @@ export class SceneMenu extends Scene {
             this.#nameInput.placeholder = 'IDENTIFY YOURSELF'
         })
 
-        // auto-focus
+        // auto-focus the input shortly after activation so it works across browsers
         const focusTimer = new Timer({
             interval: 100,
             fcn: () => this.#nameInput.focus()
@@ -86,6 +109,11 @@ export class SceneMenu extends Scene {
         this.#leaderboardButton.element.classList.add('btn-leaderboard')
     }
 
+    /**
+     * Validates the name input and, if valid, starts the transition into the game scene.
+     * @returns {void}
+     * @private
+     */
     #validateAndStart() {
         if (this.#nameInput.disabled) return
 
@@ -105,6 +133,11 @@ export class SceneMenu extends Scene {
         this.#startTransition()
     }
 
+    /**
+     * Fades the HTML overlay and logo out, then plays the iris-close transition.
+     * @returns {void}
+     * @private
+     */
     #startTransition() {
         const uiLayer = document.getElementById('ui-layer')
 
@@ -132,12 +165,23 @@ export class SceneMenu extends Scene {
         fadeTimer.start()
     }
 
+    /**
+     * Lifecycle method — runs every frame before physics.
+     * Allows pressing Enter to start the game from the keyboard.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     onPreUpdate(engine) {
         if (engine.input.keyboard.wasPressed(Keys.Enter)) {
             this.#validateAndStart()
         }
     }
 
+    /**
+     * Lifecycle method — runs when the menu becomes inactive.
+     * Tears down music, restores the overlay opacity and removes DOM elements.
+     * @returns {void}
+     */
     onDeactivate() {
         Resources.MenuMusic.stop()
 

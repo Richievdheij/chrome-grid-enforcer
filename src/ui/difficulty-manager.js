@@ -1,3 +1,18 @@
+/**
+ * DifficultyManager — pure-logic Class that tracks the current wave, intermissions,
+ * pickup cooldowns and produces spawn configurations for the game scene.
+ * Not an Excalibur Actor; instantiated once per game with `new DifficultyManager()`.
+ *
+ * @property {number}  #score                 - latest known score (private)
+ * @property {number}  #wave                  - current wave derived from score (private)
+ * @property {number}  #waveThreshold         - score points required per wave (private)
+ * @property {number}  #lastAnnouncedWave     - last wave for which an announcement was returned (private)
+ * @property {number}  #intermissionTimer     - elapsed time in the current intermission (private)
+ * @property {number}  #intermissionDuration  - intermission length in ms (private)
+ * @property {boolean} #inIntermission        - true while between waves (private)
+ * @property {boolean} #newWaveStarted        - true on the first frame of a new wave (private)
+ * @property {number}  #healthkitCooldown     - ms left before another health pickup may spawn (private)
+ */
 export class DifficultyManager {
 
     #score = 0
@@ -10,6 +25,11 @@ export class DifficultyManager {
     #newWaveStarted = false
     #healthkitCooldown = 0
 
+    /**
+     * Updates the score and, if the wave threshold is crossed, starts an intermission.
+     * @param {number} score
+     * @returns {boolean} true if a new wave just started
+     */
     updateScore(score) {
         const prevWave = this.#wave
         this.#score = score
@@ -24,6 +44,11 @@ export class DifficultyManager {
         return false
     }
 
+    /**
+     * Per-frame tick — counts down the intermission and the health-pickup cooldown.
+     * @param {number} delta - milliseconds since previous frame
+     * @returns {void}
+     */
     update(delta) {
         if (this.#inIntermission) {
             this.#intermissionTimer += delta
@@ -36,14 +61,25 @@ export class DifficultyManager {
         }
     }
 
+    /**
+     * @returns {number} current wave
+     */
     getWave() {
         return this.#wave
     }
 
+    /**
+     * @returns {boolean} true while the game is paused between waves
+     */
     isIntermission() {
         return this.#inIntermission
     }
 
+    /**
+     * Returns the announcement string the first frame a new wave begins (after intermission),
+     * and null otherwise.
+     * @returns {string|null}
+     */
     getWaveAnnouncement() {
         if (this.#newWaveStarted && !this.#inIntermission) {
             this.#newWaveStarted = false
@@ -53,10 +89,18 @@ export class DifficultyManager {
         return null
     }
 
+    /**
+     * Extra speed (px/s) the player gains based on the current wave.
+     * @returns {number}
+     */
     getPlayerSpeedBoost() {
         return (this.#wave - 1) * 15
     }
 
+    /**
+     * Builds the drone type, speed and shoot interval the scene should use for the next spawn.
+     * @returns {{droneType: "drone"|"shooting"|"fast"|"heavy"|"burst", speed: number, shootInterval: number}}
+     */
     getSpawnConfig() {
         const wave = this.#wave
         const isBulletHell = wave >= 12
@@ -100,6 +144,12 @@ export class DifficultyManager {
         return { droneType, speed, shootInterval }
     }
 
+    /**
+     * Rolls whether a pickup of the given type should spawn this tick.
+     * For "health" also enforces a cooldown so kits don't stack.
+     * @param {"health"|"emp"} type
+     * @returns {boolean}
+     */
     shouldSpawnPickup(type) {
         if (type === "health") {
             if (this.#healthkitCooldown > 0) return false
@@ -118,6 +168,10 @@ export class DifficultyManager {
         return false
     }
 
+    /**
+     * Ms between spawns at the current wave — shorter in bullet-hell mode (wave >= 12).
+     * @returns {number}
+     */
     getSpawnInterval() {
         const isBulletHell = this.#wave >= 12
         if (isBulletHell) {
@@ -129,6 +183,11 @@ export class DifficultyManager {
         return Math.max(800, base - decrease)
     }
 
+    /**
+     * Resets all internal state back to wave 1.
+     * Called by the game scene on activate.
+     * @returns {void}
+     */
     reset() {
         this.#score = 0
         this.#wave = 1

@@ -6,6 +6,24 @@ import { EnemyLaser } from "./enemy-laser.js"
 import { HealthPack } from "./healthpack.js"
 import { EmpBomb } from "./emp-bomb.js"
 
+/**
+ * Player class — the ship the user controls.
+ * Inherits from Excalibur's Actor class via `extends`.
+ *
+ * @extends Actor
+ * @property {number} speed              - movement speed in pixels per second
+ * @property {boolean} #gameOver         - true once the player has died (private)
+ * @property {number}  #health           - current hit points (private)
+ * @property {number}  #maxHealth        - maximum hit points (private)
+ * @property {number}  #shootCooldown    - milliseconds between bullets (private)
+ * @property {number}  #shootTimer       - elapsed time since last shot (private)
+ * @property {boolean} #canShoot         - cooldown gate flag (private)
+ * @property {boolean} #invincible       - true while in invincibility window (private)
+ * @property {number}  #invincibleTimer  - elapsed time inside invincibility window (private)
+ * @property {number}  #invincibleDuration - total invincibility duration in ms (private)
+ * @property {number}  #blinkTimer       - elapsed time toward next blink toggle (private)
+ * @property {number}  #blinkInterval    - milliseconds between sprite blinks (private)
+ */
 export class Player extends Actor {
 
     speed = 300
@@ -27,6 +45,10 @@ export class Player extends Actor {
     #blinkTimer = 0
     #blinkInterval = 80
 
+    /**
+     * Constructor — creates the Player Object with a fixed size and Active collision.
+     * Position is set later by the scene.
+     */
     constructor() {
         super({
             width: 60,
@@ -35,6 +57,12 @@ export class Player extends Actor {
         })
     }
 
+    /**
+     * Lifecycle method — runs once when Excalibur adds the actor to a scene.
+     * Sets up sprite, scale and collision listener.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     onInitialize(engine) {
         const sprite = Resources.Player.toSprite()
         sprite.flipHorizontal = true
@@ -44,6 +72,13 @@ export class Player extends Actor {
         this.on("collisionstart", (event) => this.hitSomething(event))
     }
 
+    /**
+     * Lifecycle method — runs every frame before physics.
+     * Handles keyboard input, shooting cooldown, screen bounds and invincibility blink.
+     * @param {import('excalibur').Engine} engine
+     * @param {number} delta - milliseconds since previous frame
+     * @returns {void}
+     */
     onPreUpdate(engine, delta) {
         if (this.#gameOver) return
 
@@ -114,7 +149,11 @@ export class Player extends Actor {
         }
     }
 
-    /** Fires a Bullet to the right, respects shoot cooldown. */
+    /**
+     * Fires a Bullet Object to the right and starts the shoot cooldown.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     shoot(engine) {
         this.#canShoot = false
         Resources.BulletShot.volume = 0.08
@@ -147,7 +186,10 @@ export class Player extends Actor {
         return false
     }
 
-    /** Restores 1 HP, up to max health. */
+    /**
+     * Restores 1 HP, up to max health.
+     * @returns {void}
+     */
     heal() {
         if (this.#health < this.#maxHealth) {
             this.#health++
@@ -155,11 +197,20 @@ export class Player extends Actor {
         }
     }
 
+    /**
+     * Public read-only accessor for the private health value.
+     * @returns {number} current hit points
+     */
     get health() {
         return this.#health
     }
 
-    /** Routes collision events to the correct handler based on the other actor's type. */
+    /**
+     * Routes collision events to the correct handler based on the other actor's type.
+     * Uses `event.other.owner` and `instanceof` to identify what was hit.
+     * @param {import('excalibur').CollisionStartEvent} event
+     * @returns {void}
+     */
     hitSomething(event) {
         if (this.#gameOver) return
 
@@ -191,6 +242,11 @@ export class Player extends Actor {
         }
     }
 
+    /**
+     * Marks the player as dead, plays the explosion animation and schedules removal.
+     * @returns {void}
+     * @private
+     */
     #die() {
         this.#gameOver = true
         this.vel = Vector.Zero
@@ -203,6 +259,11 @@ export class Player extends Actor {
         killTimer.start()
     }
 
+    /**
+     * Swaps the sprite for the multi-frame explosion Animation.
+     * @returns {void}
+     * @private
+     */
     #playDeathAnimation() {
         const frames = [
             Resources.Explosion1, Resources.Explosion2, Resources.Explosion3,

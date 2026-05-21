@@ -1,8 +1,13 @@
 import { Actor, Vector, Rectangle, Color, GraphicsGroup } from "excalibur"
 
 /**
- * Scrolling cityscape background with parallax support.
- * Draws procedurally generated buildings with neon-lit windows.
+ * Background — scrolling cityscape Actor with parallax support.
+ * Draws procedurally generated buildings and neon-lit windows in a GraphicsGroup.
+ * Inherits from Excalibur's Actor class via `extends`.
+ *
+ * @extends Actor
+ * @property {"far"|"near"} #layer - depth layer (private)
+ * @property {number}       #scrollSpeed - pixels per second this layer scrolls (private)
  */
 export class Background extends Actor {
 
@@ -10,8 +15,9 @@ export class Background extends Actor {
     #scrollSpeed
 
     /**
-     * @param {number} startX - horizontal position (0 or screen width for tiling)
-     * @param {"far"|"near"} layer - depth layer: "far" scrolls slower for parallax
+     * Constructor — creates one tile of the cityscape at the given start x.
+     * @param {number} [startX=0] - horizontal position (0 or screen width for tiling)
+     * @param {"far"|"near"} [layer="near"] - depth layer: "far" scrolls slower for parallax
      */
     constructor(startX = 0, layer = "near") {
         super({ x: startX, y: 0, z: layer === "far" ? -2 : -1 })
@@ -19,6 +25,11 @@ export class Background extends Actor {
         this.#scrollSpeed = layer === "far" ? 75 : 150
     }
 
+    /**
+     * Lifecycle method — procedurally builds buildings, windows, antennas and ground strip.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     onInitialize(engine) {
         const w = engine.drawWidth
         const h = engine.drawHeight
@@ -95,6 +106,10 @@ export class Background extends Actor {
         this.graphics.use(group)
     }
 
+    /**
+     * Public read-only accessor for this layer's scroll speed in px/s.
+     * @returns {number}
+     */
     get scrollSpeed() {
         return this.#scrollSpeed
     }

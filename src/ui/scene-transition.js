@@ -1,10 +1,21 @@
+/**
+ * SceneTransition — utility Class for iris-open/iris-close fades between scenes.
+ * All members are static — the class is used as a namespace, not instantiated with `new`.
+ *
+ * @property {HTMLDivElement|null} #overlayDiv      - the DOM overlay used for the fade (static, private)
+ * @property {number|null}         #safetyTimeoutId - fallback timeout id in case animation events never fire (static, private)
+ */
 export class SceneTransition {
 
     static #overlayDiv = null
     static #safetyTimeoutId = null
 
+    /**
+     * Creates the black overlay div, removing any leftover from a previous transition.
+     * @returns {HTMLDivElement}
+     * @private
+     */
     static #createOverlay() {
-        // always clean up any existing overlay first
         SceneTransition.cleanup()
 
         const div = document.createElement('div')
@@ -27,8 +38,13 @@ export class SceneTransition {
         return div
     }
 
+    /**
+     * Plays an iris-close animation, then runs the callback (typically a scene switch).
+     * @param {import('excalibur').Scene} scene
+     * @param {() => void} [callback]
+     * @returns {void}
+     */
     static irisClose(scene, callback) {
-        // make sure we start clean
         SceneTransition.cleanup()
 
         const div = SceneTransition.#createOverlay()
@@ -42,6 +58,7 @@ export class SceneTransition {
             fill: 'forwards'
         })
 
+        // fallback in case onfinish never fires (window blurred mid-transition, etc.)
         SceneTransition.#safetyTimeoutId = setTimeout(() => {
             SceneTransition.cleanup()
             if (callback) callback()
@@ -56,6 +73,12 @@ export class SceneTransition {
         }
     }
 
+    /**
+     * Plays an iris-open animation that reveals the new scene.
+     * @param {import('excalibur').Scene} scene
+     * @param {() => void} [callback]
+     * @returns {void}
+     */
     static irisOpen(scene, callback) {
         const div = SceneTransition.#overlayDiv || SceneTransition.#createOverlay()
         div.style.clipPath = 'circle(150% at 50% 50%)'
@@ -75,6 +98,11 @@ export class SceneTransition {
         }
     }
 
+    /**
+     * Removes the overlay div and clears any safety timeout.
+     * Safe to call multiple times.
+     * @returns {void}
+     */
     static cleanup() {
         if (SceneTransition.#safetyTimeoutId) {
             clearTimeout(SceneTransition.#safetyTimeoutId)

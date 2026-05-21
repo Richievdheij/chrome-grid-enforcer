@@ -1,12 +1,18 @@
+/**
+ * Leaderboard — utility Class for reading and writing the top-10 scores in localStorage.
+ * All members are static — the class is used as a namespace, not instantiated with `new`.
+ *
+ * @property {string} #storageKey - localStorage key used for the scores array (static, private)
+ */
 export class Leaderboard {
 
-    // localStorage key for the scores array
     static #storageKey = "leaderboard"
 
     /**
-     * Saves a score entry and keeps only the top 10.
-     * @param {string} name - player name
+     * Saves a new score entry and keeps only the top 10.
+     * @param {string} name  - player name (uppercased before saving)
      * @param {number} score - final score
+     * @returns {void}
      */
     static save(name, score) {
         const entries = Leaderboard.load()
@@ -26,7 +32,10 @@ export class Leaderboard {
         localStorage.setItem(Leaderboard.#storageKey, JSON.stringify(top10))
     }
 
-    /** Loads all leaderboard entries from localStorage, sorted by score. */
+    /**
+     * Loads all leaderboard entries from localStorage.
+     * @returns {{name: string, score: number, date: string}[]}
+     */
     static load() {
         const data = localStorage.getItem(Leaderboard.#storageKey)
         if (!data) return []
@@ -37,7 +46,10 @@ export class Leaderboard {
         }
     }
 
-    /** Returns the highest-scoring entry, or null if empty. */
+    /**
+     * Returns the highest-scoring entry, or null if the leaderboard is empty.
+     * @returns {{name: string, score: number, date: string}|null}
+     */
     static getLatest() {
         const entries = Leaderboard.load()
         return entries.length > 0 ? entries[0] : null

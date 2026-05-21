@@ -2,9 +2,28 @@ import { Vector } from "excalibur"
 import { Drone } from "./drone.js"
 import { EnemyLaser } from "./enemy-laser.js"
 import { Player } from "./player.js"
-import { Explosion } from "./explosion.js"
 import { Resources } from '../resources.js'
 
+/**
+ * ShootingDrone — a Drone that aims at the player and fires bursts of lasers.
+ * Inherits all base movement and damage behaviour from Drone via `extends`,
+ * and adds its own targeted shooting logic.
+ *
+ * @extends Drone
+ * @property {number}  #shootInterval - ms between shots/bursts (private)
+ * @property {number}  #shootTimer    - elapsed time toward next burst (private)
+ * @property {number}  #burstCount    - shots fired per burst (private)
+ * @property {number}  #burstDelay    - ms between consecutive shots in a burst (private)
+ * @property {number}  #burstFired    - shots already fired in the active burst (private)
+ * @property {boolean} #bursting      - true while a burst is in progress (private)
+ * @property {number}  #burstTimer    - elapsed time toward next shot in burst (private)
+ * @property {number}  #bulletSpeed   - laser speed in px/s (private)
+ * @property {number}  #wave          - current wave number (private)
+ * @property {number}  #aimCooldown   - elapsed time toward releasing the queued shot (private)
+ * @property {number}  #aimDelay      - delay between aim snapshot and shot release (private)
+ * @property {number}  #aimAngle      - cached firing angle in radians (private)
+ * @property {boolean} #aimReady      - true once an aim is queued and waiting to fire (private)
+ */
 export class ShootingDrone extends Drone {
 
     #shootInterval = 1500
@@ -23,11 +42,24 @@ export class ShootingDrone extends Drone {
     #aimAngle = Math.PI
     #aimReady = false
 
+    /**
+     * Constructor — passes movement params to Drone and stores the shoot interval.
+     * @param {number} x - spawn x in pixels
+     * @param {number} y - spawn y in pixels
+     * @param {number} [speed=180]          - horizontal speed
+     * @param {number} [shootInterval=1500] - ms between bursts
+     */
     constructor(x, y, speed = 180, shootInterval = 1500) {
         super(x, y, speed)
         this.#shootInterval = shootInterval
     }
 
+    /**
+     * Scales shooting behaviour with the current wave.
+     * Calls super to keep base-drone behaviour scaling intact (Inheritance).
+     * @param {number} wave
+     * @returns {void}
+     */
     configureForWave(wave) {
         super.configureForWave(wave)
         this.#wave = wave
@@ -45,6 +77,11 @@ export class ShootingDrone extends Drone {
         this.#shootInterval = Math.max(1200, this.#shootInterval - (wave * 30))
     }
 
+    /**
+     * Lifecycle method — swaps in the shooting-drone sprite and re-registers listeners.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     onInitialize(engine) {
         this.graphics.use(Resources.ShootingDrone.toSprite())
         this.scale = new Vector(1.0, 1.0)
@@ -53,6 +90,13 @@ export class ShootingDrone extends Drone {
         this.on("collisionstart", (event) => this.hitSomething(event))
     }
 
+    /**
+     * Lifecycle method — runs Drone's movement first (super), then either
+     * waits out the aim delay or runs the burst-shooting state machine.
+     * @param {import('excalibur').Engine} engine
+     * @param {number} delta - milliseconds since previous frame
+     * @returns {void}
+     */
     onPreUpdate(engine, delta) {
         super.onPreUpdate(engine, delta)
 
@@ -70,6 +114,12 @@ export class ShootingDrone extends Drone {
         this.updateShooting(engine, delta)
     }
 
+    /**
+     * Burst state machine — schedules the next burst and queues each shot inside it.
+     * @param {import('excalibur').Engine} engine
+     * @param {number} delta
+     * @returns {void}
+     */
     updateShooting(engine, delta) {
         if (this.#bursting) {
             this.#burstTimer += delta
@@ -93,19 +143,33 @@ export class ShootingDrone extends Drone {
         }
     }
 
-    /** Snapshot the aim angle — actual shot fires after delay. */
+    /**
+     * Snapshots the aim angle — the actual shot fires after #aimDelay.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     queueShot(engine) {
         this.#aimAngle = this.calculateAim(engine)
         this.#aimReady = true
         this.#aimCooldown = 0
     }
 
-    /** Fire the laser using the previously snapshot aim angle. */
+    /**
+     * Fires the laser using the previously snapshot aim angle.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     releaseShot(engine) {
         const laser = new EnemyLaser(this.pos.x - 20, this.pos.y, this.#bulletSpeed, this.#aimAngle)
         engine.add(laser)
     }
 
+    /**
+     * Calculates the angle from this drone to the Player Object, with a small
+     * random spread so the shot never feels like a perfect aimbot.
+     * @param {import('excalibur').Engine} engine
+     * @returns {number} angle in radians
+     */
     calculateAim(engine) {
         const player = engine.currentScene.actors.find(a => a instanceof Player)
         if (!player) return Math.PI

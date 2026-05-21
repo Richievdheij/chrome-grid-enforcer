@@ -1,5 +1,11 @@
 import { ImageSource, Sound, Loader } from 'excalibur'
 
+/**
+ * Resources — central registry of every image and sound used in the game.
+ * Each entry is an Object (instance) created with the `new` keyword from an
+ * Excalibur ImageSource or Sound Class.
+ * Every actor reads its sprite/sfx from this object instead of loading files itself.
+ */
 const Resources = {
     // menu
     MainMenu: new ImageSource('images/ui/menu-background.png'),
@@ -50,6 +56,10 @@ const Resources = {
     PlayerHit:     new Sound('sounds/player-hit.ogg'),
 }
 
+/**
+ * ResourceLoader — Excalibur Loader Object that preloads every Resource above.
+ * Created with `new Loader(...)` so the engine can wait on it before starting.
+ */
 const ResourceLoader = new Loader(Object.values(Resources))
 
 export { Resources, ResourceLoader }

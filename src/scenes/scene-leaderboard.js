@@ -2,11 +2,25 @@ import { Scene, Vector, Label, Font, FontUnit, Color, Keys, Actor, Rectangle } f
 import { ArcadeButton } from '../ui/button.js'
 import { Leaderboard } from '../ui/leaderboard.js'
 
+/**
+ * SceneLeaderboard — shows the all-time top 10 scores.
+ * Inherits from Excalibur's Scene class via `extends`.
+ *
+ * @extends Scene
+ * @property {ArcadeButton} #backBtn      - back-to-menu DOM button Object (private)
+ * @property {Actor[]}      #entryLabels  - actors created per activation, killed on deactivate (private)
+ */
 export class SceneLeaderboard extends Scene {
 
     #backBtn
     #entryLabels = []
 
+    /**
+     * Lifecycle method — runs once when the scene is created.
+     * Adds the static title Label.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     onInitialize(engine) {
         const title = new Label({
             text: 'ALL-TIME LEADERBOARD TOP 10',
@@ -23,6 +37,11 @@ export class SceneLeaderboard extends Scene {
         this.add(title)
     }
 
+    /**
+     * Lifecycle method — runs every time the scene becomes active.
+     * Rebuilds the leaderboard rows from localStorage.
+     * @returns {void}
+     */
     onActivate() {
         document.body.style.cursor = "default"
 
@@ -96,6 +115,7 @@ export class SceneLeaderboard extends Scene {
             const y = 170 + index * 40
             const rank = index + 1
 
+            // gold / silver / bronze tint for the top three
             let color = Color.White
             if (rank === 1) color = Color.fromHex("#FFD700")
             if (rank === 2) color = Color.fromHex("#C0C0C0")
@@ -131,12 +151,22 @@ export class SceneLeaderboard extends Scene {
         })
     }
 
+    /**
+     * Lifecycle method — Escape or Backspace returns the player to the menu.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     onPreUpdate(engine) {
         if (engine.input.keyboard.wasPressed(Keys.Escape) || engine.input.keyboard.wasPressed(Keys.Backspace)) {
             engine.goToScene("menu")
         }
     }
 
+    /**
+     * Lifecycle method — runs when the scene becomes inactive.
+     * Removes the back button and clears all per-activation entry actors.
+     * @returns {void}
+     */
     onDeactivate() {
         if (this.#backBtn) {
             this.#backBtn.unmount()
@@ -144,6 +174,11 @@ export class SceneLeaderboard extends Scene {
         this.#clearLabels()
     }
 
+    /**
+     * Kills every per-activation entry actor and resets the collection.
+     * @returns {void}
+     * @private
+     */
     #clearLabels() {
         this.#entryLabels.forEach(label => {
             if (label.kill) label.kill()

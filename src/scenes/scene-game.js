@@ -21,6 +21,34 @@ import { EmpBomb } from '../actors/emp-bomb.js'
 import { Explosion } from '../actors/explosion.js'
 import { Leaderboard } from '../ui/leaderboard.js'
 
+/**
+ * SceneGame — the gameplay scene.
+ * Owns the Player, all Drone instances, backgrounds, HUD and difficulty manager.
+ * Inherits from Excalibur's Scene class via `extends`.
+ *
+ * @extends Scene
+ * @property {Player}            #player          - the active Player Object (private)
+ * @property {number}            #score           - current score (private)
+ * @property {Timer}             #scoreTimer      - 1pt/second survival ticker (private)
+ * @property {boolean}           #gameActive      - true while gameplay is running (private)
+ * @property {DifficultyManager} #difficulty      - wave/spawn logic Object (private)
+ * @property {HudScore}          #hudScore        - score HUD (private)
+ * @property {HudHealthBar}      #hudHealth       - health HUD (private)
+ * @property {HudLevel}          #hudLevel        - wave HUD (private)
+ * @property {number}            #spawnAccumulator - ms accumulator that drives spawning (private)
+ * @property {boolean}           #gameOverShown   - true once the GameOverOverlay is on screen (private)
+ * @property {Background}        #bgFar1          - far parallax tile A (private)
+ * @property {Background}        #bgFar2          - far parallax tile B (private)
+ * @property {Background}        #bgNear1         - near parallax tile A (private)
+ * @property {Background}        #bgNear2         - near parallax tile B (private)
+ * @property {IngameBackground}  #bgScroll1       - scrolling background tile A (private)
+ * @property {IngameBackground}  #bgScroll2       - scrolling background tile B (private)
+ * @property {number}            #bgScrollSpeed   - base background scroll speed in px/s (private)
+ * @property {Function}          #handleGameOver  - bound listener for "gameover" engine event (private)
+ * @property {Function}          #handleScorePoints - bound listener for "scorepoints" engine event (private)
+ * @property {Function}          #handlePlayerHit - bound listener for "playerhit" engine event (private)
+ * @property {Function}          #handleEMP       - bound listener for "empactivated" engine event (private)
+ */
 export class SceneGame extends Scene {
 
     #player
@@ -53,6 +81,12 @@ export class SceneGame extends Scene {
     #handlePlayerHit
     #handleEMP
 
+    /**
+     * Lifecycle method — runs once when the scene is created.
+     * Sets up backgrounds, HUD, score timer and event-handler references.
+     * @param {import('excalibur').Engine} engine
+     * @returns {void}
+     */
     onInitialize(engine) {
         // infinite scrolling background
         this.#bgScroll1 = new IngameBackground(0)
@@ -105,7 +139,7 @@ export class SceneGame extends Scene {
         })
         this.add(this.#scoreTimer)
 
-        // event handlers
+        // event handlers — stored as fields so onDeactivate can detach the exact same references
         this.#handleGameOver = () => this.gameOver()
         this.#handleScorePoints = (points) => {
             this.#score += points
@@ -115,6 +149,11 @@ export class SceneGame extends Scene {
         this.#handleEMP = (pos) => this.activateEMP(pos)
     }
 
+    /**
+     * Lifecycle method — runs every time the scene becomes active.
+     * Resets state, spawns a fresh Player and starts music + transition.
+     * @returns {void}
+     */
     onActivate() {
         this.#score = 0
         this.#spawnAccumulator = 0
@@ -147,6 +186,14 @@ export class SceneGame extends Scene {
         SceneTransition.irisOpen(this)
     }
 
+    /**
+     * Lifecycle method — runs every frame before physics.
+     * Drives difficulty updates, wave announcements, spawning,
+     * background scrolling and Escape/Enter input.
+     * @param {import('excalibur').Engine} engine
+     * @param {number} delta - milliseconds since previous frame
+     * @returns {void}
+     */
     onPreUpdate(engine, delta) {
         const dt = engine.clock.elapsed() / 1000
 
@@ -174,7 +221,7 @@ export class SceneGame extends Scene {
             }
         }
 
-        // scrolling backgrounds
+        // scrolling backgrounds — double speed during intermission for a "warp" feel
         const scrollSpeed = this.#difficulty.isIntermission()
             ? this.#bgScrollSpeed * 2
             : this.#bgScrollSpeed
@@ -207,6 +254,11 @@ export class SceneGame extends Scene {
         }
     }
 
+    /**
+     * Lifecycle method — runs when the scene becomes inactive.
+     * Stops music/timers, detaches engine listeners and clears gameplay actors.
+     * @returns {void}
+     */
     onDeactivate() {
         Resources.GameMusic.stop()
         this.#scoreTimer.stop()
@@ -232,12 +284,23 @@ export class SceneGame extends Scene {
         this.#gameOverShown = false
     }
 
+    /**
+     * Pushes the latest score + wave to the HUD and updates the difficulty manager.
+     * @returns {void}
+     * @private
+     */
     #updateGame() {
         this.#hudScore.updateScore(this.#score)
         this.#hudLevel.updateLevel(this.#difficulty.getWave())
         this.#difficulty.updateScore(this.#score)
     }
 
+    /**
+     * Picks the right Drone subclass for the current wave and spawns it.
+     * Also rolls for guaranteed pickups (HealthPack / EmpBomb).
+     * Uses `new <DroneClass>(...)` and `instanceof`-style polymorphism through Inheritance.
+     * @returns {void}
+     */
     spawnDrone() {
         if (!this.#gameActive) return
 
@@ -265,7 +328,7 @@ export class SceneGame extends Scene {
                 drone = new Drone(engine.drawWidth - 10, y, config.speed)
         }
 
-        // configure all drones for current wave
+        // configure all drones for current wave (defined on the Drone parent class)
         if (drone.configureForWave) {
             drone.configureForWave(wave)
         }
@@ -284,6 +347,12 @@ export class SceneGame extends Scene {
         }
     }
 
+    /**
+     * Destroys every Drone within EmpBomb.blastRadius of the given position
+     * and awards EmpBomb.pointValue for each kill.
+     * @param {{x: number, y: number}} pos - blast origin
+     * @returns {void}
+     */
     activateEMP(pos) {
         const radius = EmpBomb.blastRadius
         const points = EmpBomb.pointValue
@@ -308,6 +377,12 @@ export class SceneGame extends Scene {
         this.#updateGame()
     }
 
+    /**
+     * Slowly ramps the game-music volume down to 0 then stops it.
+     * Used when transitioning out on game over.
+     * @returns {void}
+     * @private
+     */
     #startMusicFadeOut() {
         let steps = 0
         const fadeTimer = new Timer({
@@ -326,7 +401,11 @@ export class SceneGame extends Scene {
         fadeTimer.start()
     }
 
-    /** Player died — show game over screen, then leaderboard on enter. */
+    /**
+     * Player died — saves the score, shows the game-over overlay and arms the
+     * Enter-to-leaderboard flow in onPreUpdate.
+     * @returns {void}
+     */
     gameOver() {
         if (!this.#gameActive) return
 
@@ -343,7 +422,10 @@ export class SceneGame extends Scene {
         this.#gameOverShown = true
     }
 
-    /** Player pressed Escape — go to menu, no score saved. */
+    /**
+     * Player pressed Escape — go back to the menu, no score saved.
+     * @returns {void}
+     */
     pauseGame() {
         if (!this.#gameActive) return
 
