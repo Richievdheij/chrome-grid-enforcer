@@ -38,8 +38,7 @@ export class Game extends Engine {
         ResourceLoader.backgroundColor = "#000000"
         ResourceLoader.suppressPlayButton = true
 
-        // browsers block audio until the user interacts — install a one-shot unlock
-        this.#installAudioUnlock()
+        
 
         // start the engine once all resources are loaded, then hand off to startGame()
         this.start(ResourceLoader).then(() => this.startGame())
@@ -51,6 +50,9 @@ export class Game extends Engine {
      * @returns {void}
      */
     startGame() {
+        // browsers block audio until the user interacts — install a one-shot unlock
+        this.#installAudioUnlock()
+        
         this.addScene("menu", new SceneMenu())
         this.addScene("game", new SceneGame())
         this.addScene("leaderboard", new SceneLeaderboard())
