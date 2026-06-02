@@ -1,33 +1,49 @@
-# Excalibur Startproject 2026
+# Chrome Grid Enforcer
 
-- Ga naar [https://github.com/HR-CMGT/prg4-startproject-2026](https://github.com/HR-CMGT/prg4-startproject-2026)
-- Klik op ***USE THIS TEMPLATE > CREATE A NEW REPOSITORY***. Dit kopieert het project naar jouw eigen github.
-- Vanaf je *eigen github* kopieer je de `git url` (onder de "code" button).
-- Open VS Code. Klik op "file" > "clone repository" > plak hier je url.
-- Typ `npm install` en `npm run dev` in de terminal in VS Code. Dit start de development omgeving van Vite.
-- In `game.js` kies je de resolutie van de game.
-- Installeer de [Chrome Excalibur Debugger](https://chromewebstore.google.com/detail/excalibur-dev-tools/dinddaeielhddflijbbcmpefamfffekc)
-- [Bekijk het instructie filmpje!](https://youtu.be/UIVpe4L5_P4)
-- Vervang deze readme file met een beschrijving van jouw game.
+A cyberpunk space shooter. You pilot a ship across a neon city skyline, dodge and
+shoot waves of enemy drones, grab pickups and try to survive long enough to top the
+leaderboard.
 
-<br><br><br>
+## About this project
 
-### Resoluties
+This is a school project for the course **Object Oriented Game Development**
+(CMTTHE02-04) at Hogeschool Rotterdam – CMGT. The goal of the course is to apply
+object oriented programming (inheritance, composition, encapsulation) to a real game.
 
-| Widescreen 16/9 | Retro 4/3 |
-|---|---|
-| 640 × 360 | 512 × 384 |
-| 800 × 450 | 640 × 480 |
-| 1280 × 720 | 800 × 600 |
+- **Template:** Space Shooter
+- **Theme:** Cyberpunk megacity
+- **Engine:** [ExcaliburJS](https://excaliburjs.com/)
+- **Tooling:** [Vite](https://vitejs.dev/)
 
+It started from the official course template
+([HR-CMGT/prg4-startproject-2026](https://github.com/HR-CMGT/prg4-startproject-2026)).
+All game code in `src/` is my own work.
 
-<br><br><br>
+## Controls
 
-### AI Instructies
+| Action | Keys |
+|--------|------|
+| Move   | WASD or arrow keys |
+| Shoot  | Spacebar |
+| Back to menu | Escape |
 
-Als je copilot binnen dit project gebruikt zullen de [Excalibur instructions](./.github/copilot-instructions.md) automatisch meegenomen worden. Dit kan je zien door in het AI venster op settings te klikken. Je kan de beschikbare *skills* gebruiken door een `/` te typen. (*bv. voor het bouwen van een platform game of het toevoegen van scenes*).
+Pick up health packs to heal and EMP bombs to clear the whole screen. Enemies get
+tougher the longer you stay alive.
 
-<img width="550px" src="./public/images/excalibur-ai-skills.png">
+## Run it locally
 
-⚠️ *AI kan fouten maken! Vergelijk de code altijd met de Excalibur documentatie en lesstof*
+```bash
+npm install
+npm run dev      # start the dev server
+npm run build    # build to /docs for GitHub Pages
+```
 
+## Project structure
+
+```
+src/
+  actors/   game objects (player, drones, projectiles, pickups, background)
+  scenes/   menu, gameplay and leaderboard scenes
+  ui/       HUD, buttons, transitions, difficulty manager, leaderboard
+  scss/     styling
+```

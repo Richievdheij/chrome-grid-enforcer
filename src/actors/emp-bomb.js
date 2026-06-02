@@ -6,13 +6,10 @@ import { Resources } from '../resources.js'
  * Inherits from Excalibur's Actor class via `extends`.
  *
  * @extends Actor
- * @property {number} blastRadius - radius (px) within which drones are destroyed (static)
- * @property {number} pointValue  - score awarded per drone destroyed by the blast (static)
+ * @property {number} pointValue - score awarded per drone destroyed by the blast (static)
  */
 export class EmpBomb extends Actor {
 
-    /** @type {number} */
-    static blastRadius = 350
     /** @type {number} */
     static pointValue = 100
 

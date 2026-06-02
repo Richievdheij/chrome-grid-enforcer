@@ -348,25 +348,19 @@ export class SceneGame extends Scene {
     }
 
     /**
-     * Destroys every Drone within EmpBomb.blastRadius of the given position
+     * Wipes the whole screen — destroys every Drone currently in the scene
      * and awards EmpBomb.pointValue for each kill.
-     * @param {{x: number, y: number}} pos - blast origin
+     * @param {{x: number, y: number}} pos - blast origin (used for the central blast ring)
      * @returns {void}
      */
     activateEMP(pos) {
-        const radius = EmpBomb.blastRadius
         const points = EmpBomb.pointValue
 
         this.actors.forEach(actor => {
             if (actor instanceof Drone) {
-                const dx = actor.pos.x - pos.x
-                const dy = actor.pos.y - pos.y
-                const dist = Math.sqrt(dx * dx + dy * dy)
-                if (dist <= radius) {
-                    Explosion.show(this, actor.pos.x, actor.pos.y)
-                    this.#score += points
-                    actor.kill()
-                }
+                Explosion.show(this, actor.pos.x, actor.pos.y)
+                this.#score += points
+                actor.kill()
             }
         })
 

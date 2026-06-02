@@ -23,6 +23,11 @@ import { EmpBomb } from "./emp-bomb.js"
  * @property {number}  #invincibleDuration - total invincibility duration in ms (private)
  * @property {number}  #blinkTimer       - elapsed time toward next blink toggle (private)
  * @property {number}  #blinkInterval    - milliseconds between sprite blinks (private)
+ * @property {boolean} #knockbackActive  - true while the physics knockback is carrying the ship (private)
+ * @property {number}  #knockbackTimer   - elapsed time inside the knockback window (private)
+ * @property {number}  #knockbackDuration - total knockback window in ms (private)
+ * @property {number}  #knockbackImpulse - impulse strength applied on impact (private)
+ * @property {number}  #knockbackDecay   - per-frame velocity multiplier while knocked back (private)
  */
 export class Player extends Actor {
 
@@ -44,6 +49,13 @@ export class Player extends Actor {
     #invincibleDuration = 1000
     #blinkTimer = 0
     #blinkInterval = 80
+
+    // physics knockback — collisions push the ship back via the physics engine
+    #knockbackActive = false
+    #knockbackTimer = 0
+    #knockbackDuration = 220
+    #knockbackImpulse = 5000
+    #knockbackDecay = 0.85
 
     /**
      * Constructor — creates the Player Object with a fixed size and Active collision.
@@ -99,7 +111,17 @@ export class Player extends Actor {
             velY += this.speed
         }
 
-        this.vel = new Vector(velX, velY)
+        // while knocked back, the physics impulse carries the ship and decays;
+        // normal input control resumes once the window ends
+        if (this.#knockbackActive) {
+            this.#knockbackTimer += delta
+            this.vel = this.vel.scale(this.#knockbackDecay)
+            if (this.#knockbackTimer >= this.#knockbackDuration) {
+                this.#knockbackActive = false
+            }
+        } else {
+            this.vel = new Vector(velX, velY)
+        }
 
         // shooting cooldown
         if (!this.#canShoot) {
@@ -187,6 +209,24 @@ export class Player extends Actor {
     }
 
     /**
+     * Applies a physics knockback impulse that pushes the ship away from an impact point.
+     * Uses the engine's physics body (applyLinearImpulse) instead of setting velocity directly.
+     * @param {Vector} sourcePos - position of the thing that hit the player
+     * @returns {void}
+     * @private
+     */
+    #applyKnockback(sourcePos) {
+        let dir = this.pos.sub(sourcePos)
+        if (dir.magnitude === 0) {
+            dir = Vector.Right
+        }
+        this.body.applyLinearImpulse(dir.normalize().scale(this.#knockbackImpulse))
+
+        this.#knockbackActive = true
+        this.#knockbackTimer = 0
+    }
+
+    /**
      * Restores 1 HP, up to max health.
      * @returns {void}
      */
@@ -218,11 +258,13 @@ export class Player extends Actor {
         if (!other) return
 
         if (other instanceof Drone) {
+            this.#applyKnockback(other.pos)
             other.kill()
             this.takeDamage()
         }
 
         if (other instanceof EnemyLaser) {
+            this.#applyKnockback(other.pos)
             other.kill()
             this.takeDamage()
         }
